@@ -152,6 +152,7 @@ JSON_Status json_object_set_value(JSON_Object *object, const char *name, JSON_Va
 JSON_Status json_object_set_string(JSON_Object *object, const char *name, const char *string);
 JSON_Status json_object_set_string_with_len(JSON_Object *object, const char *name, const char *string, size_t len);  /* length shouldn't include last null character */
 JSON_Status json_object_set_number(JSON_Object *object, const char *name, double number);
+JSON_Status json_object_set_number_with_prec(JSON_Object *object, const char *name, double number, size_t precision);
 JSON_Status json_object_set_boolean(JSON_Object *object, const char *name, int boolean);
 JSON_Status json_object_set_null(JSON_Object *object, const char *name);
 
@@ -161,6 +162,8 @@ JSON_Status json_object_dotset_value(JSON_Object *object, const char *name, JSON
 JSON_Status json_object_dotset_string(JSON_Object *object, const char *name, const char *string);
 JSON_Status json_object_dotset_string_with_len(JSON_Object *object, const char *name, const char *string, size_t len); /* length shouldn't include last null character */
 JSON_Status json_object_dotset_number(JSON_Object *object, const char *name, double number);
+JSON_Status json_object_dotset_number_with_prec(JSON_Object *object, const char *name, double number, size_t precision);
+
 JSON_Status json_object_dotset_boolean(JSON_Object *object, const char *name, int boolean);
 JSON_Status json_object_dotset_null(JSON_Object *object, const char *name);
 
@@ -220,6 +223,7 @@ JSON_Value * json_value_init_array  (void);
 JSON_Value * json_value_init_string (const char *string); /* copies passed string */
 JSON_Value * json_value_init_string_with_len(const char *string, size_t length); /* copies passed string, length shouldn't include last null character */
 JSON_Value * json_value_init_number (double number);
+JSON_Value * json_value_init_number_with_prec(double number, size_t precision);
 JSON_Value * json_value_init_boolean(int boolean);
 JSON_Value * json_value_init_null   (void);
 JSON_Value * json_value_deep_copy   (const JSON_Value *value);
@@ -231,6 +235,7 @@ JSON_Array  *   json_value_get_array  (const JSON_Value *value);
 const char  *   json_value_get_string (const JSON_Value *value);
 size_t          json_value_get_string_len(const JSON_Value *value); /* doesn't account for last null character */
 double          json_value_get_number (const JSON_Value *value);
+size_t          json_value_get_number_prec (const JSON_Value *value);
 int             json_value_get_boolean(const JSON_Value *value);
 JSON_Value  *   json_value_get_parent (const JSON_Value *value);
 

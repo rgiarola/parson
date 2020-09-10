@@ -44,7 +44,8 @@
 #define STARTING_CAPACITY 16
 #define MAX_NESTING       2048
 
-#define FLOAT_FORMAT "%1.17g" /* do not increase precision without incresing NUM_BUF_SIZE */
+#define FLOAT_FORMAT "%1.*g" /* do not increase precision without incresing NUM_BUF_SIZE */
+#define FLOAT_FORMAT_PREC 17 /* default precision */
 #define NUM_BUF_SIZE 64 /* double printed with "%1.17g" shouldn't be longer than 25 bytes so let's be paranoid and use 64 */
 
 #define SIZEOF_TOKEN(a)       (sizeof(a) - 1)
@@ -73,10 +74,15 @@ typedef struct json_string {
     size_t length;
 } JSON_String;
 
+typedef struct json_number {
+    double number;
+    int precision;
+} JSON_Number;
+
 /* Type definitions */
 typedef union json_value_value {
     JSON_String  string;
-    double       number;
+    JSON_Number  number;
     JSON_Object *object;
     JSON_Array  *array;
     int          boolean;
@@ -896,7 +902,7 @@ static int json_serialize_to_buffer_r(const JSON_Value *value, char *buf, int le
     JSON_Object *object = NULL;
     size_t i = 0, count = 0;
     double num = 0.0;
-    int written = -1, written_total = 0;
+    int written = -1, written_total = 0, precision = 0;
     size_t len = 0;
 
     switch (json_value_get_type(value)) {
@@ -1005,10 +1011,12 @@ static int json_serialize_to_buffer_r(const JSON_Value *value, char *buf, int le
             return written_total;
         case JSONNumber:
             num = json_value_get_number(value);
+            precision = json_value_get_number_prec(value);
             if (buf != NULL) {
                 num_buf = buf;
             }
-            written = sprintf(num_buf, FLOAT_FORMAT, num);
+            written = sprintf(num_buf, FLOAT_FORMAT, precision >= 0 ? precision : FLOAT_FORMAT_PREC, num);
+
             if (written < 0) {
                 return -1;
             }
@@ -1335,7 +1343,10 @@ size_t json_value_get_string_len(const JSON_Value *value) {
 }
 
 double json_value_get_number(const JSON_Value *value) {
-    return json_value_get_type(value) == JSONNumber ? value->value.number : 0;
+    return json_value_get_type(value) == JSONNumber ? value->value.number.number : 0;
+}
+size_t json_value_get_number_prec(const JSON_Value *value) {
+    return json_value_get_type(value) == JSONNumber ? value->value.number.precision : 0;
 }
 
 int json_value_get_boolean(const JSON_Value *value) {
@@ -1431,7 +1442,17 @@ JSON_Value * json_value_init_number(double number) {
     }
     new_value->parent = NULL;
     new_value->type = JSONNumber;
-    new_value->value.number = number;
+    new_value->value.number.number = number;
+    new_value->value.number.precision = -1;
+    return new_value;
+}
+
+JSON_Value * json_value_init_number_with_prec(double number, size_t precision) {
+    JSON_Value *new_value = json_value_init_number(number);
+    if(new_value == NULL)
+        return NULL;
+
+    new_value->value.number.precision = precision;
     return new_value;
 }
 
@@ -1868,6 +1889,14 @@ JSON_Status json_object_set_number(JSON_Object *object, const char *name, double
     }
     return status;
 }
+JSON_Status json_object_set_number_with_prec(JSON_Object *object, const char *name, double number, size_t precision) {
+    JSON_Value *value = json_value_init_number_with_prec(number, precision);
+    JSON_Status status = json_object_set_value(object, name, value);
+    if (status == JSONFailure) {
+        json_value_free(value);
+    }
+    return status;
+}
 
 JSON_Status json_object_set_boolean(JSON_Object *object, const char *name, int boolean) {
     JSON_Value *value = json_value_init_boolean(boolean);
@@ -1955,6 +1984,17 @@ JSON_Status json_object_dotset_string_with_len(JSON_Object *object, const char *
 
 JSON_Status json_object_dotset_number(JSON_Object *object, const char *name, double number) {
     JSON_Value *value = json_value_init_number(number);
+    if (value == NULL) {
+        return JSONFailure;
+    }
+    if (json_object_dotset_value(object, name, value) == JSONFailure) {
+        json_value_free(value);
+        return JSONFailure;
+    }
+    return JSONSuccess;
+}
+JSON_Status json_object_dotset_number_with_prec(JSON_Object *object, const char *name, double number, size_t precision) {
+    JSON_Value *value = json_value_init_number_with_prec(number, precision);
     if (value == NULL) {
         return JSONFailure;
     }
