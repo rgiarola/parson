@@ -45,6 +45,7 @@
 #define MAX_NESTING       2048
 
 #define FLOAT_FORMAT "%1.*g" /* do not increase precision without incresing NUM_BUF_SIZE */
+#define FLOAT_FORMAT2 "%1.*lf" /* do not increase precision without incresing NUM_BUF_SIZE */
 #define FLOAT_FORMAT_PREC 17 /* default precision */
 #define NUM_BUF_SIZE 64 /* double printed with "%1.17g" shouldn't be longer than 25 bytes so let's be paranoid and use 64 */
 
@@ -1015,7 +1016,10 @@ static int json_serialize_to_buffer_r(const JSON_Value *value, char *buf, int le
             if (buf != NULL) {
                 num_buf = buf;
             }
-            written = sprintf(num_buf, FLOAT_FORMAT, precision >= 0 ? precision : FLOAT_FORMAT_PREC, num);
+            if(precision >= 0)
+                written = sprintf(num_buf, FLOAT_FORMAT2, precision, num);
+            else
+                written = sprintf(num_buf, FLOAT_FORMAT, FLOAT_FORMAT_PREC, num);
 
             if (written < 0) {
                 return -1;
@@ -1897,6 +1901,9 @@ JSON_Status json_object_set_number_with_prec(JSON_Object *object, const char *na
     }
     return status;
 }
+JSON_Status json_object_set_integer(JSON_Object *object, const char *name, long number) {
+    return json_object_set_number_with_prec(object, name, (double) number, 0);
+}
 
 JSON_Status json_object_set_boolean(JSON_Object *object, const char *name, int boolean) {
     JSON_Value *value = json_value_init_boolean(boolean);
@@ -2003,6 +2010,9 @@ JSON_Status json_object_dotset_number_with_prec(JSON_Object *object, const char 
         return JSONFailure;
     }
     return JSONSuccess;
+}
+JSON_Status json_object_dotset_integer(JSON_Object *object, const char *name, long number) {
+    return json_object_dotset_number_with_prec(object, name, (double) number, 0);
 }
 
 JSON_Status json_object_dotset_boolean(JSON_Object *object, const char *name, int boolean) {
