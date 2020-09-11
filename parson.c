@@ -1349,7 +1349,7 @@ size_t json_value_get_string_len(const JSON_Value *value) {
 double json_value_get_number(const JSON_Value *value) {
     return json_value_get_type(value) == JSONNumber ? value->value.number.number : 0;
 }
-size_t json_value_get_number_prec(const JSON_Value *value) {
+int json_value_get_number_prec(const JSON_Value *value) {
     return json_value_get_type(value) == JSONNumber ? value->value.number.precision : 0;
 }
 
@@ -1904,6 +1904,9 @@ JSON_Status json_object_set_number_with_prec(JSON_Object *object, const char *na
 JSON_Status json_object_set_integer(JSON_Object *object, const char *name, long number) {
     return json_object_set_number_with_prec(object, name, (double) number, 0);
 }
+JSON_Status json_object_set_integer2(JSON_Object *object, const char *name, long long number) {
+    return json_object_set_number_with_prec(object, name, (double) number, 0);
+}
 
 JSON_Status json_object_set_boolean(JSON_Object *object, const char *name, int boolean) {
     JSON_Value *value = json_value_init_boolean(boolean);
@@ -2012,6 +2015,10 @@ JSON_Status json_object_dotset_number_with_prec(JSON_Object *object, const char 
     return JSONSuccess;
 }
 JSON_Status json_object_dotset_integer(JSON_Object *object, const char *name, long number) {
+    return json_object_dotset_number_with_prec(object, name, (double) number, 0);
+}
+JSON_Status json_object_dotset_integer2(JSON_Object *object, const char *name, long long number) {
+    //NOTE: max precision to 15 digits
     return json_object_dotset_number_with_prec(object, name, (double) number, 0);
 }
 
